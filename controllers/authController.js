@@ -2,6 +2,8 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
+import { OAuth2Client } from "google-auth-library";
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Helper: Send OTP Email
 const sendOTPEmail = async (email, otp) => {
@@ -99,5 +101,62 @@ export const login = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
+  }
+};
+
+
+
+export const googleLogin = async (req, res) => {
+  try {
+    const { idToken } = req.body;
+
+    if (!idToken) {
+      return res.status(400).json({ error: "Google token is required" });
+    }
+
+    // Verify token with Google
+    const ticket = await client.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const { sub, email, name, email_verified } = ticket.getPayload();
+
+    // Find user
+    let user = await User.findOne({ email });
+
+    // If user doesn't exist → create
+    if (!user) {
+      user = await User.create({
+        fullName: name,
+        email,
+        googleId: sub,
+        emailVerified: email_verified,
+      });
+    }
+
+    // If user exists but googleId missing → attach it
+    if (!user.googleId) {
+      user.googleId = sub;
+      user.emailVerified = true;
+      await user.save();
+    }
+
+    // Generate JWT
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      message: "Google login successful",
+      token,
+      userId: user._id,
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Google authentication failed" });
   }
 };
