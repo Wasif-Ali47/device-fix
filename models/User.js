@@ -75,6 +75,24 @@ const UserSchema = new mongoose.Schema({
       lastAttemptAt: { type: Date, default: Date.now },
       isCompleted: { type: Boolean, default: true },
     },
+
+    
+  ],
+
+   examProgress: [
+    {
+      topic: { type: String, required: true },
+      difficulty: {
+        type: String,
+        default: "medium",
+        enum: ["medium"],
+      },
+      correct: { type: Number, required: true },
+      total: { type: Number, required: true },
+      percentage: { type: Number, required: true },
+      attempts: { type: Number, default: 1 },
+      lastUpdated: { type: Date, default: Date.now },
+    },
   ],
 }, { timestamps: true });
 export default mongoose.model("User", UserSchema);

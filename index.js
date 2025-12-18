@@ -28,7 +28,7 @@ app.use("/auth", authRoutes);
 app.use("/api/quiz", quizRoutes);
 
 app.use("/chat", chatRoutes);
-app.use("/exam", examRoutes);
+app.use("/exam_progress", examRoutes);
 
 
 // Start server
