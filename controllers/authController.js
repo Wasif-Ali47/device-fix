@@ -311,7 +311,8 @@ export const googleLogin = async (req, res) => {
 
 // ---------------- GET PROFILE ----------------
 export const getProfile = async (req, res) => {
-  const user = await User.findById(req.params.id).select("-password");
+const user = await User.findById(req.params.id)
+  .select("-chatHistories -examHistory -otp -quizProgress -examProgress -resetOTP -emailVerified");
   if (!user) return res.status(404).json({ error: "User not found" });
   res.json(user);
 };
