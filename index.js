@@ -14,6 +14,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.use("/uploads", express.static("uploads"));
 
 // NEW (Mongoose 7+)
 mongoose.connect(process.env.MONGO_URI)

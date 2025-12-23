@@ -39,6 +39,13 @@ const UserSchema = new mongoose.Schema({
   googleId: String,
   emailVerified: { type: Boolean, default: false },
   otp: String,
+  resetOTP: String,
+
+  profileImage: {
+  type: String,
+  default: "",
+},
+
   chatHistories: [
     {
       topic: { type: String, required: true },
