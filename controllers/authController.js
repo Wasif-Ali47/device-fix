@@ -242,9 +242,10 @@ export const signup = async (req, res) => {
       profileImage: req.file ? `/uploads/profile/${req.file.filename}` : null,
     });
 
-    await sendEmail(email, "OTP Verification", `Your OTP is ${otp}`);
 
     res.json({ message: "Signup successful, verify OTP", userId: user._id });
+    await sendEmail(email, "OTP Verification", `Your OTP is ${otp}`);
+
   } catch (err) {
     res.status(500).json({ error: "Server error" });
   }

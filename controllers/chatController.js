@@ -58,3 +58,15 @@ export const getChatHistory = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
+
+// Get list of all chat topics
+export const getAllChatTopics = async (req, res) => {
+  try {
+    const topics = req.user.chatHistories.map(entry => entry.topic);
+
+    res.json({ topics });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
