@@ -333,6 +333,7 @@ const user = await User.findById(req.params.id)
 
 
 export const updateProfile = async (req, res) => {
+
   try {
     const user = await User.findById(req.params.id);
 
@@ -356,10 +357,11 @@ export const updateProfile = async (req, res) => {
     if (req.body.newPassword) {
       updates.password = req.body.newPassword;
     }
-
+console.log(req.file)
     if (req.file) {
       updates.profileImage = `/uploads/profile/${req.file.filename}`;
     }
+    
 
     const updatedUser = await User.findByIdAndUpdate(
       req.params.id,
