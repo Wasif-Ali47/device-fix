@@ -319,17 +319,61 @@ const user = await User.findById(req.params.id)
 };
 
 // ---------------- UPDATE PROFILE ----------------
+// export const updateProfile = async (req, res) => {
+//   const updates = {
+//     fullName: req.body.fullName,
+//   };
+
+//   if (req.file)
+//     updates.profileImage = `/uploads/profile/${req.file.filename}`;
+
+//   const user = await User.findByIdAndUpdate(req.params.id, updates, { new: true });
+//   res.json(user);
+// };
+
+
 export const updateProfile = async (req, res) => {
-  const updates = {
-    fullName: req.body.fullName,
-  };
+  try {
+    const user = await User.findById(req.params.id);
 
-  if (req.file)
-    updates.profileImage = `/uploads/profile/${req.file.filename}`;
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-  const user = await User.findByIdAndUpdate(req.params.id, updates, { new: true });
-  res.json(user);
+    // 🔑 Old password check (simple)
+    if (req.body.oldPassword && req.body.newPassword) {
+      if (user.password !== req.body.oldPassword) {
+        return res.status(400).json({
+          message: "Old password is incorrect",
+        });
+      }
+    }
+
+    const updates = {
+      fullName: req.body.fullName,
+    };
+
+    if (req.body.newPassword) {
+      updates.password = req.body.newPassword;
+    }
+
+    if (req.file) {
+      updates.profileImage = `/uploads/profile/${req.file.filename}`;
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      updates,
+      { new: true }
+    );
+
+    res.json("Your Information Updated");
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
 };
+
 
 // ---------------- FORGOT PASSWORD ----------------
 export const forgotPassword = async (req, res) => {
