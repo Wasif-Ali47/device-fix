@@ -282,33 +282,101 @@ export const login = async (req, res) => {
   res.json({ token });
 };
 
-// ---------------- GOOGLE LOGIN ----------------
+
 export const googleLogin = async (req, res) => {
-  const { idToken } = req.body;
+  try {
+    const { idToken } = req.body;
 
-  const ticket = await client.verifyIdToken({
-    idToken,
-    audience: process.env.GOOGLE_CLIENT_ID,
-  });
+    if (!idToken) return res.status(400).json({ error: "Google ID token required" });
 
-  const { sub, email, name, picture } = ticket.getPayload();
-
-  let user = await User.findOne({ email });
-
-  if (!user) {
-    user = await User.create({
-      fullName: name,
-      email,
-      googleId: sub,
-      emailVerified: true,
-      profileImage: picture,
+    const ticket = await client.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
     });
+
+    const { sub, email, name, email_verified, picture } = ticket.getPayload();
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      user = await User.create({
+        fullName: name,
+        email,
+        googleId: sub,
+        emailVerified: email_verified,
+        avatar: picture,
+      });
+    }
+
+    // Update existing user if needed
+    let updated = false;
+    if (!user.googleId) { user.googleId = sub; updated = true; }
+    if (!user.avatar && picture) { user.avatar = picture; updated = true; }
+    if (!user.emailVerified && email_verified) { user.emailVerified = true; updated = true; }
+
+    if (updated) await user.save();
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+
+    // Respond like simple login
+    res.json({ token, id: user._id });
+
+  } catch (err) {
+    console.error("Google login error:", err.message);
+    res.status(500).json({ error: "Google authentication failed" });
   }
-
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
-
-  res.json({ token, user });
 };
+
+
+// export const googleLogin = async (req, res) => {
+//   console.log(req)
+//   try {
+//     console.log("body" , req.body)
+//     const { idToken } = req.body;
+    
+//     if (!idToken) return res.status(400).json({ message: "Google ID token required" });
+
+//     const ticket = await client.verifyIdToken({
+//       idToken,
+//       audience: process.env.GOOGLE_CLIENT_ID, // or array of allowed client IDs if multi-platform
+//     });
+
+//     const { sub, email, name, email_verified, picture } = ticket.getPayload();
+
+//     let user = await User.findOne({ email });
+
+//     if (!user) {
+//       user = await User.create({
+//         fullName: name,
+//         email,
+//         googleId: sub,
+//         emailVerified: email_verified,
+//         avatar: picture,
+//       });
+//     }
+
+//     // Update existing user if needed
+//     let updated = false;
+//     if (!user.googleId) { user.googleId = sub; updated = true; }
+//     if (!user.avatar && picture) { user.avatar = picture; updated = true; }
+//     if (!user.emailVerified && email_verified) { user.emailVerified = true; updated = true; }
+
+//     if (updated) await user.save();
+
+//     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+
+//     res.json({
+//       message: "Google login successful",
+//       token,
+//       user: { id: user._id, fullName: user.fullName, email: user.email, avatar: user.avatar },
+//     });
+
+//   } catch (err) {
+//     console.error("Google login error:", err.message);
+//     res.status(500).json({ error: "Google authentication failed" });
+//   }
+// };
+
 
 // ---------------- GET PROFILE ----------------
 export const getProfile = async (req, res) => {
