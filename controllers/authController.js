@@ -319,6 +319,7 @@ export const googleLogin = async (req, res) => {
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
     // Respond like simple login
+    console.log(user._id , "sdfsdf")
     res.json({ token, id: user._id });
 
   } catch (err) {
@@ -340,10 +341,11 @@ export const googleLogin = async (req, res) => {
 //       idToken,
 //       audience: process.env.GOOGLE_CLIENT_ID, // or array of allowed client IDs if multi-platform
 //     });
-
+// console.log(ticket , "dffdg")
 //     const { sub, email, name, email_verified, picture } = ticket.getPayload();
 
 //     let user = await User.findOne({ email });
+// console.log(user , "dffdg")
 
 //     if (!user) {
 //       user = await User.create({
@@ -379,6 +381,9 @@ export const googleLogin = async (req, res) => {
 
 
 // ---------------- GET PROFILE ----------------
+
+
+
 export const getProfile = async (req, res) => {
 const user = await User.findById(req.params.id)
   .select("-chatHistories -examHistory -otp -quizProgress -examProgress -resetOTP -emailVerified");
