@@ -515,22 +515,57 @@ export const verifyOTP = async (req, res) => {
 };
 
 // ---------------- LOGIN ----------------
+// export const login = async (req, res) => {
+//   const { email, password } = req.body;
+
+//   if (!email || !password)
+//     return res.status(400).json({ error: "Email and password required" });
+
+//   if (!isValidEmail(email))
+//     return res.status(400).json({ error: "Invalid email format" });
+
+//   const user = await User.findOne({ email });
+//   if (!user || user.password !== password)
+//     return res.status(400).json({ error: "Invalid credentials" });
+
+//   if (!user.emailVerified)
+//     return res.status(400).json({ error: "Email not verified" });
+
+//   const token = jwt.sign(
+//     { id: user._id },
+//     process.env.JWT_SECRET,
+//     { expiresIn: "7d" }
+//   );
+
+//   res.json({ token });
+// };
+
+// ---------------- LOGIN ----------------
 export const login = async (req, res) => {
   const { email, password } = req.body;
 
+  // Step 1: Empty fields
   if (!email || !password)
     return res.status(400).json({ error: "Email and password required" });
 
+  // Step 2: Email format
   if (!isValidEmail(email))
     return res.status(400).json({ error: "Invalid email format" });
 
+  // Step 3: Email existence
   const user = await User.findOne({ email });
-  if (!user || user.password !== password)
-    return res.status(400).json({ error: "Invalid credentials" });
+  if (!user)
+    return res.status(400).json({ error: "Email not registered" });
 
+  // Step 4: Password match
+  if (user.password !== password)
+    return res.status(400).json({ error: "Password incorrect" });
+
+  // Step 5: Email verification
   if (!user.emailVerified)
     return res.status(400).json({ error: "Email not verified" });
 
+  // Step 6: Token
   const token = jwt.sign(
     { id: user._id },
     process.env.JWT_SECRET,
@@ -539,6 +574,7 @@ export const login = async (req, res) => {
 
   res.json({ token });
 };
+
 
 // ---------------- GOOGLE LOGIN ----------------
 export const googleLogin = async (req, res) => {
