@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>User APIs – Deep Validation Documentation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    h2 {
+      margin-top: 40px;
+      border-bottom: 2px solid #ddd;
+      padding-bottom: 5px;
+    }
+    .api {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    code {
+      background: #f1f1f1;
+      padding: 4px 6px;
+      border-radius: 4px;
+    }
+    ul {
+      margin-left: 20px;
+    }
+    .error {
+      color: #c0392b;
+    }
+    .success {
+      color: #27ae60;
+    }
+  </style>
+</head>
+<body>
+
+<h1>User Authentication APIs – Deep Validation & Error Handling</h1>
+
+<!-- ================= SIGNUP ================= -->
+<h2>1. SIGNUP API</h2>
+<div class="api">
+
+<p><b>Endpoint:</b> <code>POST /auth/signup</code></p>
+
+<p><b>Request Body:</b></p>
+<code>{ fullName, email, password, profileImage (file) }</code>
+
+<h3>Validation Flow (Execution Order)</h3>
+
+<ul>
+  <li>
+    <b>Step 1:</b> If <code>fullName</code>, <code>email</code>, or <code>password</code> is missing  
+    <div class="error">→ Response: 400 { "error": "All fields required" }</div>
+  </li>
+
+  <li>
+    <b>Step 2:</b> If <code>email</code> is not valid (example: abc@, abc.com)  
+    <div class="error">→ Response: 400 { "error": "Invalid email format" }</div>
+  </li>
+
+  <li>
+    <b>Step 3:</b> If <code>password.length &lt; 6</code>  
+    <div class="error">→ Response: 400 { "error": "Password must be at least 6 characters" }</div>
+  </li>
+
+  <li>
+    <b>Step 4:</b> If email already exists in database  
+    <div class="error">→ Response: 400 { "error": "User exists" }</div>
+  </li>
+</ul>
+
+<h3>Success Response</h3>
+<div class="success">
+  200 → { "message": "Signup successful, verify OTP", "userId": "USER_ID" }
+</div>
+
+<p><b>Frontend Note:</b>  
+OTP screen sirf is response ke baad open karni hai.</p>
+
+</div>
+
+<!-- ================= VERIFY OTP ================= -->
+<h2>2. VERIFY OTP</h2>
+<div class="api">
+
+<p><b>Endpoint:</b> <code>POST /auth/verify-otp</code></p>
+
+<p><b>Request Body:</b></p>
+<code>{ userId, otp }</code>
+
+<h3>Validation Flow</h3>
+
+<ul>
+  <li>
+    <b>Step 1:</b> If <code>userId</code> OR <code>otp</code> missing  
+    <div class="error">→ 400 { "error": "User ID and OTP required" }</div>
+  </li>
+
+  <li>
+    <b>Step 2:</b> If <code>userId</code> is not valid MongoDB ObjectId  
+    <div class="error">→ 400 { "error": "Invalid user ID" }</div>
+  </li>
+
+  <li>
+    <b>Step 3:</b> If OTP is not exactly 6 digits  
+    <div class="error">→ 400 { "error": "Invalid OTP format" }</div>
+  </li>
+
+  <li>
+    <b>Step 4:</b> If OTP does not match stored OTP  
+    <div class="error">→ 400 { "error": "Invalid OTP" }</div>
+  </li>
+</ul>
+
+<h3>Success</h3>
+<div class="success">
+  200 → { "message": "Email verified" }
+</div>
+
+</div>
+
+<!-- ================= LOGIN ================= -->
+<h2>3. LOGIN</h2>
+<div class="api">
+
+<p><b>Endpoint:</b> <code>POST /auth/login</code></p>
+
+<p><b>Request Body:</b></p>
+<code>{ email, password }</code>
+
+<h3>Validation Flow</h3>
+
+<ul>
+  <li>
+    Missing email or password  
+    <div class="error">→ 400 { "error": "Email and password required" }</div>
+  </li>
+
+  <li>
+    Invalid email format  
+    <div class="error">→ 400 { "error": "Invalid email format" }</div>
+  </li>
+
+  <li>
+    Email or password incorrect  
+    <div class="error">→ 400 { "error": "Invalid credentials" }</div>
+  </li>
+
+  <li>
+    Email exists but not verified  
+    <div class="error">→ 400 { "error": "Email not verified" }</div>
+  </li>
+</ul>
+
+<h3>Success</h3>
+<div class="success">
+  200 → { "token": "JWT_TOKEN" }
+</div>
+
+<p><b>Frontend Note:</b>  
+Token ko localStorage / secure storage me save karna hai.</p>
+
+</div>
+
+<!-- ================= GOOGLE LOGIN ================= -->
+<h2>4. GOOGLE LOGIN</h2>
+<div class="api">
+
+<p><b>Endpoint:</b> <code>POST /auth/google-login</code></p>
+
+<p><b>Request Body:</b></p>
+<code>{ idToken }</code>
+
+<h3>Validation Flow</h3>
+
+<ul>
+  <li>
+    idToken missing  
+    <div class="error">→ 400 { "error": "Google ID token required" }</div>
+  </li>
+
+  <li>
+    Invalid / expired Google token  
+    <div class="error">→ 400 { "error": "Invalid Google token" }</div>
+  </li>
+
+  <li>
+    Google server error  
+    <div class="error">→ 500 { "error": "Google authentication failed" }</div>
+  </li>
+</ul>
+
+<h3>Success</h3>
+<div class="success">
+  200 → { "token": "JWT_TOKEN", "id": "USER_ID" }
+</div>
+
+</div>
+
+<!-- ================= UPDATE PROFILE ================= -->
+<h2>5. UPDATE PROFILE</h2>
+<div class="api">
+
+<p><b>Endpoint:</b> <code>PUT /user/profile/:id</code></p>
+
+<p><b>Request Body:</b></p>
+<code>{ fullName, oldPassword, newPassword, profileImage }</code>
+
+<h3>Validation Flow</h3>
+
+<ul>
+  <li>
+    Invalid user ID  
+    <div class="error">→ 400 { "message": "Invalid user ID" }</div>
+  </li>
+
+  <li>
+    No update data sent  
+    <div class="error">→ 400 { "message": "No data to update" }</div>
+  </li>
+
+  <li>
+    newPassword sent but oldPassword missing  
+    <div class="error">→ 400 { "message": "Old password required" }</div>
+  </li>
+
+  <li>
+    oldPassword incorrect  
+    <div class="error">→ 400 { "message": "Old password is incorrect" }</div>
+  </li>
+</ul>
+
+<h3>Success</h3>
+<div class="success">
+  200 → "Your Information Updated"
+</div>
+
+</div>
+
+<!-- ================= FORGOT PASSWORD ================= -->
+<h2>6. FORGOT PASSWORD</h2>
+<div class="api">
+
+<ul>
+  <li>Email missing → 400 { "error": "Email required" }</li>
+  <li>Invalid email → 400 { "error": "Invalid email format" }</li>
+  <li>User not found → 404 { "error": "User not found" }</li>
+</ul>
+
+<div class="success">
+  200 → { "message": "OTP sent" }
+</div>
+
+</div>
+
+<!-- ================= RESET PASSWORD ================= -->
+<h2>7. RESET PASSWORD</h2>
+<div class="api">
+
+<ul>
+  <li>Any field missing → 400 { "error": "All fields required" }</li>
+  <li>OTP not 6 digits → 400 { "error": "Invalid OTP format" }</li>
+  <li>Password &lt; 6 chars → 400 { "error": "Password must be at least 6 characters" }</li>
+  <li>OTP incorrect → 400 { "error": "Invalid OTP" }</li>
+</ul>
+
+<div class="success">
+  200 → { "message": "Password reset successful" }
+</div>
+
+</div>
+
+</body>
+</html>

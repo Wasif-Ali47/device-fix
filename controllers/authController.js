@@ -200,152 +200,103 @@
 
 
 
-import User from "../models/User.js";
-import jwt from "jsonwebtoken";
-import nodemailer from "nodemailer";
-import { OAuth2Client } from "google-auth-library";
+// import User from "../models/User.js";
+// import jwt from "jsonwebtoken";
+// import nodemailer from "nodemailer";
+// import { OAuth2Client } from "google-auth-library";
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+// const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-// ---------------- EMAIL ----------------
-const sendEmail = async (email, subject, text) => {
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
+// // ---------------- EMAIL ----------------
+// const sendEmail = async (email, subject, text) => {
+//   const transporter = nodemailer.createTransport({
+//     service: "gmail",
+//     auth: {
+//       user: process.env.EMAIL_USER,
+//       pass: process.env.EMAIL_PASS,
+//     },
+//   });
 
-  await transporter.sendMail({ from: process.env.EMAIL_USER, to: email, subject, text });
-};
+//   await transporter.sendMail({ from: process.env.EMAIL_USER, to: email, subject, text });
+// };
 
-// ---------------- SIGNUP ----------------
-export const signup = async (req, res) => {
-  try {
-    const { fullName, email, password } = req.body;
+// // ---------------- SIGNUP ----------------
+// export const signup = async (req, res) => {
+//   try {
+//     const { fullName, email, password } = req.body;
 
-    if (!fullName || !email || !password)
-      return res.status(400).json({ error: "All fields required" });
+//     if (!fullName || !email || !password)
+//       return res.status(400).json({ error: "All fields required" });
 
-    const exists = await User.findOne({ email });
-    if (exists) return res.status(400).json({ error: "User exists" });
+//     const exists = await User.findOne({ email });
+//     if (exists) return res.status(400).json({ error: "User exists" });
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+//     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    const user = await User.create({
-      fullName,
-      email,
-      password,
-      otp,
-      emailVerified: false,
-      profileImage: req.file ? `/uploads/profile/${req.file.filename}` : null,
-    });
-
-
-    res.json({ message: "Signup successful, verify OTP", userId: user._id });
-    await sendEmail(email, "OTP Verification", `Your OTP is ${otp}`);
-
-  } catch (err) {
-    res.status(500).json({ error: "Server error" });
-  }
-};
-
-// ---------------- VERIFY OTP ----------------
-export const verifyOTP = async (req, res) => {
-  const { userId, otp } = req.body;
-  const user = await User.findById(userId);
-
-  if (!user || user.otp !== otp)
-    return res.status(400).json({ error: "Invalid OTP" });
-
-  user.emailVerified = true;
-  user.otp = null;
-  await user.save();
-
-  res.json({ message: "Email verified" });
-};
-
-// ---------------- LOGIN ----------------
-export const login = async (req, res) => {
-  const { email, password } = req.body;
-
-  const user = await User.findOne({ email });
-  if (!user || user.password !== password)
-    return res.status(400).json({ error: "Invalid credentials" });
-
-  if (!user.emailVerified)
-    return res.status(400).json({ error: "Email not verified" });
-
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
-
-  res.json({ token });
-};
+//     const user = await User.create({
+//       fullName,
+//       email,
+//       password,
+//       otp,
+//       emailVerified: false,
+//       profileImage: req.file ? `/uploads/profile/${req.file.filename}` : null,
+//     });
 
 
-export const googleLogin = async (req, res) => {
-  try {
-    const { idToken } = req.body;
+//     res.json({ message: "Signup successful, verify OTP", userId: user._id });
+//     await sendEmail(email, "OTP Verification", `Your OTP is ${otp}`);
 
-    if (!idToken) return res.status(400).json({ error: "Google ID token required" });
+//   } catch (err) {
+//     res.status(500).json({ error: "Server error" });
+//   }
+// };
 
-    const ticket = await client.verifyIdToken({
-      idToken,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
+// // ---------------- VERIFY OTP ----------------
+// export const verifyOTP = async (req, res) => {
+//   const { userId, otp } = req.body;
+//   const user = await User.findById(userId);
 
-    const { sub, email, name, email_verified, picture } = ticket.getPayload();
+//   if (!user || user.otp !== otp)
+//     return res.status(400).json({ error: "Invalid OTP" });
 
-    let user = await User.findOne({ email });
+//   user.emailVerified = true;
+//   user.otp = null;
+//   await user.save();
 
-    if (!user) {
-      user = await User.create({
-        fullName: name,
-        email,
-        googleId: sub,
-        emailVerified: email_verified,
-        avatar: picture,
-      });
-    }
+//   res.json({ message: "Email verified" });
+// };
 
-    // Update existing user if needed
-    let updated = false;
-    if (!user.googleId) { user.googleId = sub; updated = true; }
-    if (!user.avatar && picture) { user.avatar = picture; updated = true; }
-    if (!user.emailVerified && email_verified) { user.emailVerified = true; updated = true; }
+// // ---------------- LOGIN ----------------
+// export const login = async (req, res) => {
+//   const { email, password } = req.body;
 
-    if (updated) await user.save();
+//   const user = await User.findOne({ email });
+//   if (!user || user.password !== password)
+//     return res.status(400).json({ error: "Invalid credentials" });
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+//   if (!user.emailVerified)
+//     return res.status(400).json({ error: "Email not verified" });
 
-    // Respond like simple login
-    console.log(user._id , "sdfsdf")
-    res.json({ token, id: user._id });
+//   const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
-  } catch (err) {
-    console.error("Google login error:", err.message);
-    res.status(500).json({ error: "Google authentication failed" });
-  }
-};
+//   res.json({ token });
+// };
 
 
 // export const googleLogin = async (req, res) => {
-//   console.log(req)
 //   try {
-//     console.log("body" , req.body)
 //     const { idToken } = req.body;
-    
-//     if (!idToken) return res.status(400).json({ message: "Google ID token required" });
+
+//     if (!idToken) return res.status(400).json({ error: "Google ID token required" });
 
 //     const ticket = await client.verifyIdToken({
 //       idToken,
-//       audience: process.env.GOOGLE_CLIENT_ID, // or array of allowed client IDs if multi-platform
+//       audience: process.env.GOOGLE_CLIENT_ID,
 //     });
-// console.log(ticket , "dffdg")
+
 //     const { sub, email, name, email_verified, picture } = ticket.getPayload();
 
 //     let user = await User.findOne({ email });
-// console.log(user , "dffdg")
 
 //     if (!user) {
 //       user = await User.create({
@@ -367,11 +318,11 @@ export const googleLogin = async (req, res) => {
 
 //     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
-//     res.json({
-//       message: "Google login successful",
-//       token,
-//       user: { id: user._id, fullName: user.fullName, email: user.email, avatar: user.avatar },
-//     });
+//     // Respond like simple login
+//     console.log(user._id , "sdfsdf")
+    
+//     res.json({ token,
+//        id: user._id });
 
 //   } catch (err) {
 //     console.error("Google login error:", err.message);
@@ -379,83 +330,334 @@ export const googleLogin = async (req, res) => {
 //   }
 // };
 
+// // ---------------- GET PROFILE ----------------
+
+
+
+// export const getProfile = async (req, res) => {
+// const user = await User.findById(req.params.id)
+//   .select("-chatHistories -examHistory -otp -quizProgress -examProgress -resetOTP -emailVerified");
+//   if (!user) return res.status(404).json({ error: "User not found" });
+//   res.json(user);
+// };
+
+
+// export const updateProfile = async (req, res) => {
+
+//   try {
+//     const user = await User.findById(req.params.id);
+
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found" });
+//     }
+
+//     // 🔑 Old password check (simple)
+//     if (req.body.oldPassword && req.body.newPassword) {
+//       if (user.password !== req.body.oldPassword) {
+//         return res.status(400).json({
+//           message: "Old password is incorrect",
+//         });
+//       }
+//     }
+
+//     const updates = {
+//       fullName: req.body.fullName,
+//     };
+
+//     if (req.body.newPassword) {
+//       updates.password = req.body.newPassword;
+//     }
+// console.log(req.file)
+//     if (req.file) {
+//       updates.profileImage = `/uploads/profile/${req.file.filename}`;
+//     }
+    
+
+//     const updatedUser = await User.findByIdAndUpdate(
+//       req.params.id,
+//       updates,
+//       { new: true }
+//     );
+
+//     res.json("Your Information Updated");
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
+
+// // ---------------- FORGOT PASSWORD ----------------
+// export const forgotPassword = async (req, res) => {
+//   const { email } = req.body;
+
+//   const user = await User.findOne({ email });
+//   if (!user) return res.status(404).json({ error: "User not found" });
+
+//   const otp = Math.floor(100000 + Math.random() * 900000).toString();
+//   user.resetOTP = otp;
+//   await user.save();
+
+//   await sendEmail(email, "Reset Password OTP", `Your OTP is ${otp}`);
+//   res.json({ message: "OTP sent" });
+// };
+
+// // ---------------- RESET PASSWORD ----------------
+// export const resetPassword = async (req, res) => {
+//   const { email, otp, newPassword } = req.body;
+
+//   const user = await User.findOne({ email, resetOTP: otp });
+//   if (!user) return res.status(400).json({ error: "Invalid OTP" });
+
+//   user.password = newPassword;
+//   user.resetOTP = null;
+//   await user.save();
+
+//   res.json({ message: "Password reset successful" });
+// };
+
+
+import User from "../models/User.js";
+import jwt from "jsonwebtoken";
+import nodemailer from "nodemailer";
+import mongoose from "mongoose";
+import { OAuth2Client } from "google-auth-library";
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+// ---------------- HELPERS ----------------
+const isValidEmail = (email) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+const isValidOTP = (otp) =>
+  typeof otp === "string" && /^\d{6}$/.test(otp);
+
+// ---------------- EMAIL ----------------
+const sendEmail = async (email, subject, text) => {
+  if (!email || !subject || !text) return;
+
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  await transporter.sendMail({
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject,
+    text,
+  });
+};
+
+// ---------------- SIGNUP ----------------
+export const signup = async (req, res) => {
+  try {
+    const { fullName, email, password } = req.body;
+
+    if (!fullName || !email || !password)
+      return res.status(400).json({ error: "All fields required" });
+
+    if (!isValidEmail(email))
+      return res.status(400).json({ error: "Invalid email format" });
+
+    if (password.length < 6)
+      return res.status(400).json({ error: "Password must be at least 6 characters" });
+
+    const exists = await User.findOne({ email });
+    if (exists) return res.status(400).json({ error: "User exists" });
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    const user = await User.create({
+      fullName,
+      email,
+      password,
+      otp,
+      emailVerified: false,
+      profileImage: req.file
+        ? `/uploads/profile/${req.file.filename}`
+        : null,
+    });
+
+    res.json({ message: "Signup successful, verify OTP", userId: user._id });
+    await sendEmail(email, "OTP Verification", `Your OTP is ${otp}`);
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+// ---------------- VERIFY OTP ----------------
+export const verifyOTP = async (req, res) => {
+  const { userId, otp } = req.body;
+
+  if (!userId || !otp)
+    return res.status(400).json({ error: "User ID and OTP required" });
+
+  if (!mongoose.Types.ObjectId.isValid(userId))
+    return res.status(400).json({ error: "Invalid user ID" });
+
+  if (!isValidOTP(otp))
+    return res.status(400).json({ error: "Invalid OTP format" });
+
+  const user = await User.findById(userId);
+
+  if (!user || user.otp !== otp)
+    return res.status(400).json({ error: "Invalid OTP" });
+
+  user.emailVerified = true;
+  user.otp = null;
+  await user.save();
+
+  res.json({ message: "Email verified" });
+};
+
+// ---------------- LOGIN ----------------
+export const login = async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password)
+    return res.status(400).json({ error: "Email and password required" });
+
+  if (!isValidEmail(email))
+    return res.status(400).json({ error: "Invalid email format" });
+
+  const user = await User.findOne({ email });
+  if (!user || user.password !== password)
+    return res.status(400).json({ error: "Invalid credentials" });
+
+  if (!user.emailVerified)
+    return res.status(400).json({ error: "Email not verified" });
+
+  const token = jwt.sign(
+    { id: user._id },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+
+  res.json({ token });
+};
+
+// ---------------- GOOGLE LOGIN ----------------
+export const googleLogin = async (req, res) => {
+  try {
+    const { idToken } = req.body;
+
+    if (!idToken)
+      return res.status(400).json({ error: "Google ID token required" });
+
+    const ticket = await client.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload || !payload.email)
+      return res.status(400).json({ error: "Invalid Google token" });
+
+    const { sub, email, name, email_verified, picture } = payload;
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      user = await User.create({
+        fullName: name || "Google User",
+        email,
+        googleId: sub,
+        emailVerified: email_verified,
+        avatar: picture,
+      });
+    }
+
+    let updated = false;
+    if (!user.googleId) { user.googleId = sub; updated = true; }
+    if (!user.avatar && picture) { user.avatar = picture; updated = true; }
+    if (!user.emailVerified && email_verified) { user.emailVerified = true; updated = true; }
+
+    if (updated) await user.save();
+
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.json({ token, id: user._id });
+  } catch (err) {
+    console.error("Google login error:", err.message);
+    res.status(500).json({ error: "Google authentication failed" });
+  }
+};
 
 // ---------------- GET PROFILE ----------------
-
-
-
 export const getProfile = async (req, res) => {
-const user = await User.findById(req.params.id)
-  .select("-chatHistories -examHistory -otp -quizProgress -examProgress -resetOTP -emailVerified");
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id))
+    return res.status(400).json({ error: "Invalid user ID" });
+
+  const user = await User.findById(id).select(
+    "-chatHistories -examHistory -otp -quizProgress -examProgress -resetOTP -emailVerified"
+  );
+
   if (!user) return res.status(404).json({ error: "User not found" });
   res.json(user);
 };
 
 // ---------------- UPDATE PROFILE ----------------
-// export const updateProfile = async (req, res) => {
-//   const updates = {
-//     fullName: req.body.fullName,
-//   };
-
-//   if (req.file)
-//     updates.profileImage = `/uploads/profile/${req.file.filename}`;
-
-//   const user = await User.findByIdAndUpdate(req.params.id, updates, { new: true });
-//   res.json(user);
-// };
-
-
 export const updateProfile = async (req, res) => {
-
   try {
-    const user = await User.findById(req.params.id);
+    const { id } = req.params;
 
-    if (!user) {
+    if (!mongoose.Types.ObjectId.isValid(id))
+      return res.status(400).json({ message: "Invalid user ID" });
+
+    const user = await User.findById(id);
+    if (!user)
       return res.status(404).json({ message: "User not found" });
-    }
 
-    // 🔑 Old password check (simple)
+    if (req.body.newPassword && !req.body.oldPassword)
+      return res.status(400).json({ message: "Old password required" });
+
     if (req.body.oldPassword && req.body.newPassword) {
       if (user.password !== req.body.oldPassword) {
-        return res.status(400).json({
-          message: "Old password is incorrect",
-        });
+        return res.status(400).json({ message: "Old password is incorrect" });
       }
     }
 
-    const updates = {
-      fullName: req.body.fullName,
-    };
+    const updates = {};
 
-    if (req.body.newPassword) {
-      updates.password = req.body.newPassword;
-    }
-console.log(req.file)
-    if (req.file) {
+    if (req.body.fullName) updates.fullName = req.body.fullName;
+    if (req.body.newPassword) updates.password = req.body.newPassword;
+    if (req.file)
       updates.profileImage = `/uploads/profile/${req.file.filename}`;
-    }
-    
 
-    const updatedUser = await User.findByIdAndUpdate(
-      req.params.id,
-      updates,
-      { new: true }
-    );
+    if (Object.keys(updates).length === 0)
+      return res.status(400).json({ message: "No data to update" });
+
+    await User.findByIdAndUpdate(id, updates, { new: true });
 
     res.json("Your Information Updated");
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 // ---------------- FORGOT PASSWORD ----------------
 export const forgotPassword = async (req, res) => {
   const { email } = req.body;
 
+  if (!email)
+    return res.status(400).json({ error: "Email required" });
+
+  if (!isValidEmail(email))
+    return res.status(400).json({ error: "Invalid email format" });
+
   const user = await User.findOne({ email });
-  if (!user) return res.status(404).json({ error: "User not found" });
+  if (!user)
+    return res.status(404).json({ error: "User not found" });
 
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   user.resetOTP = otp;
@@ -469,8 +671,18 @@ export const forgotPassword = async (req, res) => {
 export const resetPassword = async (req, res) => {
   const { email, otp, newPassword } = req.body;
 
+  if (!email || !otp || !newPassword)
+    return res.status(400).json({ error: "All fields required" });
+
+  if (!isValidOTP(otp))
+    return res.status(400).json({ error: "Invalid OTP format" });
+
+  if (newPassword.length < 6)
+    return res.status(400).json({ error: "Password must be at least 6 characters" });
+
   const user = await User.findOne({ email, resetOTP: otp });
-  if (!user) return res.status(400).json({ error: "Invalid OTP" });
+  if (!user)
+    return res.status(400).json({ error: "Invalid OTP" });
 
   user.password = newPassword;
   user.resetOTP = null;
