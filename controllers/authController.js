@@ -433,23 +433,60 @@ const isValidOTP = (otp) =>
   typeof otp === "string" && /^\d{6}$/.test(otp);
 
 // ---------------- EMAIL ----------------
-const sendEmail = async (email, subject, text) => {
-  if (!email || !subject || !text) return;
+// const sendEmail = async (email, subject, text) => {
+//   if (!email || !subject || !text) return;
 
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
+//   const transporter = nodemailer.createTransport({
+//     service: "gmail",
+//     auth: {
+//       user: process.env.EMAIL_USER,
+//       pass: process.env.EMAIL_PASS,
+//     },
+//   });
 
-  await transporter.sendMail({
-    from: process.env.EMAIL_USER,
-    to: email,
-    subject,
-    text,
-  });
+//   await transporter.sendMail({
+//     from: process.env.EMAIL_USER,
+//     to: email,
+//     subject,
+//     text,
+//   });
+// };
+
+export const sendEmail = async (email, subject, text) => {
+  if (!email || !subject || !text) {
+    console.error("Missing email, subject, or text");
+    return;
+  }
+
+  if (!isValidEmail(email)) {
+    console.error("Invalid email format:", email);
+    return;
+  }
+
+  try {
+    // Create transporter
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 587, // Use 465 if 587 blocked
+      secure: false, // true for 465, false for 587
+      auth: {
+        user: process.env.EMAIL_USER, // your Gmail address
+        pass: process.env.EMAIL_PASS, // Gmail App Password (16-char)
+      },
+    });
+
+    // Send email
+    const info = await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject,
+      text,
+    });
+
+    console.log("Email sent successfully:", info.messageId);
+  } catch (error) {
+    console.error("Error sending email:", error.message);
+  }
 };
 
 // ---------------- SIGNUP ----------------
