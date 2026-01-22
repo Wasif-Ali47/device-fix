@@ -131,122 +131,86 @@ OTP screen sirf is response ke baad open karni hai.</p>
 </div>
 
 <!-- ================= LOGIN ================= -->
-<h2>3. LOGIN</h2>
+<!-- ================= LOGIN ================= -->
+<h2>3. LOGIN API (DETAILED VALIDATIONS)</h2>
 <div class="api">
 
-<p><b>Endpoint:</b> <code>POST /auth/login</code></p>
+<p><b>Endpoint:</b> <code>POST /api/auth/login</code></p>
 
 <p><b>Request Body:</b></p>
 <code>{ email, password }</code>
 
-<h3>Validation Flow</h3>
+<h3>Validation Execution Order (IMPORTANT)</h3>
 
 <ul>
   <li>
-    Missing email or password  
-    <div class="error">→ 400 { "error": "Email and password required" }</div>
+    <b>Step 1: Missing Fields</b><br />
+    Condition: <code>email</code> OR <code>password</code> missing  
+    <div class="error">
+      → 400 { "error": "Email and password required" }
+    </div>
+    <i>Frontend:</i> Show inline validation, don’t hit API if possible
   </li>
 
-  <li>
-    Invalid email format  
-    <div class="error">→ 400 { "error": "Invalid email format" }</div>
-  </li>
+  <br />
 
   <li>
-    Email or password incorrect  
-    <div class="error">→ 400 { "error": "Invalid credentials" }</div>
+    <b>Step 2: Invalid Email Format</b><br />
+    Condition: Email does not match regex (abc@, abc.com, etc.)
+    <div class="error">
+      → 400 { "error": "Invalid email format" }
+    </div>
+    <i>Frontend:</i> Validate on blur / submit
   </li>
 
+  <br />
+
   <li>
-    Email exists but not verified  
-    <div class="error">→ 400 { "error": "Email not verified" }</div>
+    <b>Step 3: Email Not Registered</b><br />
+    Condition: Email not found in database
+    <div class="error">
+      → 400 { "error": "Email not registered" }
+    </div>
+    <i>Frontend:</i> Suggest “Sign up” CTA
+  </li>
+
+  <br />
+
+  <li>
+    <b>Step 4: Password Incorrect</b><br />
+    Condition: Email exists BUT password mismatch
+    <div class="error">
+      → 400 { "error": "Password incorrect" }
+    </div>
+    <i>Frontend:</i> Show “Forgot password?” link
+  </li>
+
+  <br />
+
+  <li>
+    <b>Step 5: Email Not Verified</b><br />
+    Condition: Correct email + password BUT <code>emailVerified === false</code>
+    <div class="error">
+      → 400 { "error": "Email not verified" }
+    </div>
+    <i>Frontend:</i> Redirect to OTP verification screen
   </li>
 </ul>
 
-<h3>Success</h3>
+<h3>Success Response</h3>
 <div class="success">
   200 → { "token": "JWT_TOKEN" }
 </div>
 
-<p><b>Frontend Note:</b>  
-Token ko localStorage / secure storage me save karna hai.</p>
-
-</div>
-
-<!-- ================= GOOGLE LOGIN ================= -->
-<h2>4. GOOGLE LOGIN</h2>
-<div class="api">
-
-<p><b>Endpoint:</b> <code>POST /auth/google-login</code></p>
-
-<p><b>Request Body:</b></p>
-<code>{ idToken }</code>
-
-<h3>Validation Flow</h3>
-
+<p><b>Frontend Handling Rules:</b></p>
 <ul>
-  <li>
-    idToken missing  
-    <div class="error">→ 400 { "error": "Google ID token required" }</div>
-  </li>
-
-  <li>
-    Invalid / expired Google token  
-    <div class="error">→ 400 { "error": "Invalid Google token" }</div>
-  </li>
-
-  <li>
-    Google server error  
-    <div class="error">→ 500 { "error": "Google authentication failed" }</div>
-  </li>
+  <li>Save token only on success</li>
+  <li>Do NOT store token if any error occurs</li>
+  <li>Error message should be shown EXACTLY as received</li>
 </ul>
 
-<h3>Success</h3>
-<div class="success">
-  200 → { "token": "JWT_TOKEN", "id": "USER_ID" }
 </div>
 
-</div>
-
-<!-- ================= UPDATE PROFILE ================= -->
-<h2>5. UPDATE PROFILE</h2>
-<div class="api">
-
-<p><b>Endpoint:</b> <code>PUT /user/profile/:id</code></p>
-
-<p><b>Request Body:</b></p>
-<code>{ fullName, oldPassword, newPassword, profileImage }</code>
-
-<h3>Validation Flow</h3>
-
-<ul>
-  <li>
-    Invalid user ID  
-    <div class="error">→ 400 { "message": "Invalid user ID" }</div>
-  </li>
-
-  <li>
-    No update data sent  
-    <div class="error">→ 400 { "message": "No data to update" }</div>
-  </li>
-
-  <li>
-    newPassword sent but oldPassword missing  
-    <div class="error">→ 400 { "message": "Old password required" }</div>
-  </li>
-
-  <li>
-    oldPassword incorrect  
-    <div class="error">→ 400 { "message": "Old password is incorrect" }</div>
-  </li>
-</ul>
-
-<h3>Success</h3>
-<div class="success">
-  200 → "Your Information Updated"
-</div>
-
-</div>
 
 <!-- ================= FORGOT PASSWORD ================= -->
 <h2>6. FORGOT PASSWORD</h2>
