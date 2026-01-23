@@ -467,11 +467,11 @@ export const sendEmail = async (email, subject, text) => {
     // Create transporter
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
-      port: 587, // Use 465 if 587 blocked
-      secure: false, // true for 465, false for 587
+      port: 465, 
+      secure: true, 
       auth: {
-        user: process.env.EMAIL_USER, // your Gmail address
-        pass: process.env.EMAIL_PASS, // Gmail App Password (16-char)
+        user: process.env.EMAIL_USER, 
+        pass: process.env.EMAIL_PASS,
       },
     });
 
