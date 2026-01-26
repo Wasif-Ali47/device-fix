@@ -618,8 +618,9 @@ export const googleLogin = async (req, res) => {
   try {
     const { idToken } = req.body;
 
-    if (!idToken)
+    if (!idToken) {
       return res.status(400).json({ error: "Google ID token required" });
+    }
 
     const ticket = await client.verifyIdToken({
       idToken,
@@ -627,27 +628,42 @@ export const googleLogin = async (req, res) => {
     });
 
     const payload = ticket.getPayload();
-    if (!payload || !payload.email)
+    if (!payload || !payload.email) {
       return res.status(400).json({ error: "Invalid Google token" });
+    }
 
     const { sub, email, name, email_verified, picture } = payload;
 
     let user = await User.findOne({ email });
 
+    // ✅ Create user
     if (!user) {
       user = await User.create({
         fullName: name || "Google User",
         email,
         googleId: sub,
         emailVerified: email_verified,
-        avatar: picture,
+        profileImage: picture || "",   // 🔥 saved here
       });
     }
 
+    // ✅ Update missing fields
     let updated = false;
-    if (!user.googleId) { user.googleId = sub; updated = true; }
-    if (!user.avatar && picture) { user.avatar = picture; updated = true; }
-    if (!user.emailVerified && email_verified) { user.emailVerified = true; updated = true; }
+
+    if (!user.googleId) {
+      user.googleId = sub;
+      updated = true;
+    }
+
+    if (!user.profileImage && picture) {
+      user.profileImage = picture;   // 🔥 saved here
+      updated = true;
+    }
+
+    if (!user.emailVerified && email_verified) {
+      user.emailVerified = true;
+      updated = true;
+    }
 
     if (updated) await user.save();
 
@@ -657,12 +673,17 @@ export const googleLogin = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    res.json({ token, id: user._id });
+    res.json({
+      token,
+      id: user._id,
+    });
+
   } catch (err) {
     console.error("Google login error:", err.message);
     res.status(500).json({ error: "Google authentication failed" });
   }
 };
+
 
 // ---------------- GET PROFILE ----------------
 export const getProfile = async (req, res) => {
