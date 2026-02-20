@@ -2,7 +2,6 @@ import express from "express";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import cors from "cors";
-
 import authRoutes from "./routes/auth.js";
 import chatRoutes from "./routes/chat.js";
 import examRoutes from "./routes/exam.js";
