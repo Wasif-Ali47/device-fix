@@ -13,3 +13,4 @@ yarn-error.log*
 # Build output (agar build folder use hota hai)
 dist/
 build/
+.env 
