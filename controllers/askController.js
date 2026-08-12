@@ -114,9 +114,12 @@ export const askMentor = async (req, res) => {
     chatEntry.messages.push({ question, reply });
     await req.user.save();
 
-    res.json({ reply });
+    return res.json({ reply });
   } catch (err) {
     console.error("Error in /ask:", err);
-    res.json({ reply: "Something went wrong, try again." });
+    return res.status(500).json({
+      reply: "Something went wrong, try again.",
+      error: "AI chat request failed",
+    });
   }
 };
