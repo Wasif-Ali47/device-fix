@@ -10,6 +10,27 @@ const UserSchema = new mongoose.Schema({
   emailVerified: { type: Boolean, default: false },
   otp: String,
   resetOTP: String,
+  isActive: { type: Boolean, default: true },
+  isBanned: { type: Boolean, default: false },
+  bannedAt: { type: Date, default: null },
+  bannedReason: { type: String, default: "" },
+
+  deviceTokens: [
+    {
+      token: { type: String, required: true, trim: true },
+      deviceType: { type: String, default: "unknown", trim: true },
+      deviceInfo: { type: mongoose.Schema.Types.Mixed, default: {} },
+      appSlug: { type: String, default: "", trim: true },
+      registeredAt: { type: Date, default: Date.now },
+    },
+  ],
+  openAiUsage: {
+    promptTokens: { type: Number, default: 0 },
+    completionTokens: { type: Number, default: 0 },
+    totalTokens: { type: Number, default: 0 },
+    requestCount: { type: Number, default: 0 },
+    lastUsedAt: { type: Date, default: null },
+  },
 
   profileImage: {
   type: String,

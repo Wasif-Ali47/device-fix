@@ -602,6 +602,13 @@ export const login = async (req, res) => {
   if (!user.emailVerified)
     return res.status(400).json({ error: "Email not verified" });
 
+  if (user.isBanned) {
+    return res.status(403).json({
+      error: "Account banned",
+      bannedReason: user.bannedReason || "",
+    });
+  }
+
   // Step 6: Token
   const token = jwt.sign(
     { id: user._id },
@@ -666,6 +673,13 @@ export const googleLogin = async (req, res) => {
     }
 
     if (updated) await user.save();
+
+    if (user.isBanned) {
+      return res.status(403).json({
+        error: "Account banned",
+        bannedReason: user.bannedReason || "",
+      });
+    }
 
     const token = jwt.sign(
       { id: user._id },

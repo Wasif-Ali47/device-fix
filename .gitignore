@@ -2,6 +2,8 @@
 node_modules/
 
 # Environment variables
+.env
+firebase-service-account.json
 
 # Logs
 npm-debug.log*
