@@ -423,7 +423,7 @@ import nodemailer from "nodemailer";
 import mongoose from "mongoose";
 import { OAuth2Client } from "google-auth-library";
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const client = new OAuth2Client();
 
 // ---------------- HELPERS ----------------
 const isValidEmail = (email) =>
@@ -431,6 +431,71 @@ const isValidEmail = (email) =>
 
 const isValidOTP = (otp) =>
   typeof otp === "string" && /^\d{6}$/.test(otp);
+
+const escapeHtml = (value = "") =>
+  String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+const extractOtp = (text) => {
+  const match = String(text).match(/\b\d{6}\b/);
+  return match ? match[0] : "";
+};
+
+const buildOtpEmailHtml = ({ subject, otp }) => {
+  const safeSubject = escapeHtml(subject);
+  const safeOtp = escapeHtml(otp);
+  const purpose = /reset/i.test(subject)
+    ? "Use this code to reset your DevicePulse AI password."
+    : "Use this code to verify your DevicePulse AI account.";
+
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>${safeSubject}</title>
+  </head>
+  <body style="margin:0;padding:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;color:#172033;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f7fb;padding:28px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #e6edf5;box-shadow:0 14px 40px rgba(23,32,51,0.10);">
+            <tr>
+              <td style="background:#111827;padding:28px 30px;">
+                <div style="font-size:13px;letter-spacing:1.8px;text-transform:uppercase;color:#7dd3fc;font-weight:700;">DevicePulse AI</div>
+                <h1 style="margin:10px 0 0;font-size:26px;line-height:1.25;color:#ffffff;font-weight:800;">${safeSubject}</h1>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:32px 30px 12px;">
+                <p style="margin:0;color:#4b5563;font-size:16px;line-height:1.6;">${escapeHtml(purpose)}</p>
+                <div style="margin:28px 0 24px;text-align:center;">
+                  <div style="display:inline-block;background:#eef8ff;border:1px solid #bae6fd;border-radius:14px;padding:18px 26px;">
+                    <div style="font-size:12px;letter-spacing:1.4px;text-transform:uppercase;color:#0369a1;font-weight:700;margin-bottom:8px;">Your verification code</div>
+                    <div style="font-size:38px;line-height:1;letter-spacing:8px;color:#0f172a;font-weight:800;">${safeOtp}</div>
+                  </div>
+                </div>
+                <p style="margin:0;color:#64748b;font-size:14px;line-height:1.6;">This code is for your account only. If you did not request it, you can safely ignore this email.</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:22px 30px 30px;">
+                <div style="border-top:1px solid #e5edf5;padding-top:18px;color:#94a3b8;font-size:12px;line-height:1.5;">
+                  Sent by DevicePulse AI. Please do not share this code with anyone.
+                </div>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+};
 
 // ---------------- EMAIL ----------------
 // const sendEmail = async (email, subject, text) => {
@@ -475,12 +540,16 @@ export const sendEmail = async (email, subject, text) => {
       },
     });
 
+    const otp = extractOtp(text);
+    const html = otp ? buildOtpEmailHtml({ subject, otp }) : undefined;
+
     // Send email
     const info = await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+      from: `"DevicePulse AI" <${process.env.EMAIL_USER}>`,
       to: email,
       subject,
       text,
+      ...(html ? { html } : {}),
     });
 
     console.log("Email sent successfully:", info.messageId);
@@ -629,9 +698,14 @@ export const googleLogin = async (req, res) => {
       return res.status(400).json({ error: "Google ID token required" });
     }
 
+    const googleClientId = process.env.GOOGLE_CLIENT_ID;
+    if (!googleClientId) {
+      return res.status(500).json({ error: "Google client ID is not configured" });
+    }
+
     const ticket = await client.verifyIdToken({
       idToken,
-      audience: process.env.GOOGLE_CLIENT_ID,
+      audience: googleClientId,
     });
 
     const payload = ticket.getPayload();
