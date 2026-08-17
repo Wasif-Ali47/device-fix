@@ -52,9 +52,11 @@ export const optionalAuth = async (req, _res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.id);
-    if (user && !user.isBanned) {
-      req.user = user;
+    if (user) {
       req.authUser = user;
+      if (!user.isBanned) {
+        req.user = user;
+      }
     }
   } catch (_) {
     // Optional auth deliberately ignores invalid tokens.
