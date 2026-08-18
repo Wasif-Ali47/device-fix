@@ -14,6 +14,7 @@ import appPromoRoutes from "./routes/appPromoRoutes.js";
 import adminPromoRoutes from "./routes/adminPromoRoutes.js";
 import faqRoutes from "./routes/faqRoutes.js";
 import knowledgeRoutes from "./routes/knowledgeRoutes.js";
+import subscriptionRoutes from "./routes/subscriptionRoutes.js";
 import { ensureFirebaseAdmin } from "./utils/firebaseAdminInit.js";
 
 dotenv.config();
@@ -47,6 +48,7 @@ app.get("/", (req, res) => {
       notifications: `${baseUrl}/api/notifications`,
       appPromos: `${baseUrl}/api/app-promos`,
       faq: `${baseUrl}/api/faq`,
+      subscription: `${baseUrl}/api/subscription`,
       adminKnowledge: `${baseUrl}/api/admin/knowledge`,
     },
   });
@@ -91,6 +93,7 @@ app.use("/api/app-promos", appPromoRoutes);
 app.use("/api/admin/app-promos", adminPromoRoutes);
 app.use("/api/faq", faqRoutes);
 app.use("/api/admin/knowledge", knowledgeRoutes);
+app.use("/api/subscription", subscriptionRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: "Not found" });

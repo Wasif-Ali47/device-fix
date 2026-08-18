@@ -29,6 +29,8 @@ export const getUsers = async (_req, res) => {
         profileImage: user.profileImage || "",
         emailVerified: !!user.emailVerified,
         isActive: user.isActive !== false,
+        isPro: !!user.isPro,
+        subscription: user.subscription || {},
         isBanned: !!user.isBanned,
         bannedAt: user.bannedAt || null,
         bannedReason: user.bannedReason || "",
@@ -64,6 +66,7 @@ export const updateUser = async (req, res) => {
       email: "email",
       emailVerified: "emailVerified",
       isActive: "isActive",
+      isPro: "isPro",
     };
     for (const [source, target] of Object.entries(fieldMap)) {
       if (req.body?.[source] !== undefined) {
@@ -76,6 +79,12 @@ export const updateUser = async (req, res) => {
     }
     if (typeof payload.fullName === "string") {
       payload.fullName = payload.fullName.trim();
+    }
+    if (req.body?.subscription && typeof req.body.subscription === "object") {
+      payload.subscription = {
+        ...req.body.subscription,
+        updatedAt: new Date(),
+      };
     }
 
     if (!Object.keys(payload).length) {

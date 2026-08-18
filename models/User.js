@@ -14,6 +14,15 @@ const UserSchema = new mongoose.Schema({
   isBanned: { type: Boolean, default: false },
   bannedAt: { type: Date, default: null },
   bannedReason: { type: String, default: "" },
+  isPro: { type: Boolean, default: false },
+  subscription: {
+    plan: { type: String, default: "free" },
+    status: { type: String, default: "free" },
+    platform: { type: String, default: "" },
+    productId: { type: String, default: "" },
+    expiresAt: { type: Date, default: null },
+    updatedAt: { type: Date, default: null },
+  },
 
   deviceTokens: [
     {
